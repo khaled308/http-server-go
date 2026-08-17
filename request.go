@@ -12,7 +12,7 @@ type Request struct {
 	Method  string
 	Path    string
 	Version string
-	Headers map[string]string
+	Headers Headers
 	Body    []byte
 }
 
@@ -64,7 +64,7 @@ func parseRequest(request []byte) (Request, error) {
 		return Request{}, fmt.Errorf("invalid path: %s", path)
 	}
 
-	headers := make(map[string]string)
+	headers := make(Headers)
 
 	for _, line := range lines[1:] {
 		idx := strings.IndexByte(line, ':')
@@ -79,10 +79,10 @@ func parseRequest(request []byte) (Request, error) {
 			return Request{}, fmt.Errorf("empty header name")
 		}
 
-		headers[name] = value
+		headers.Set(name, value)
 	}
 
-	if value, ok := headers["content-length"]; ok {
+	if value, ok := headers.Get("content-length"); ok {
 		contentLength, err := strconv.Atoi(value)
 		if err != nil || contentLength < 0 {
 			return Request{}, fmt.Errorf("invalid Content-Length")

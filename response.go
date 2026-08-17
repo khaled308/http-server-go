@@ -15,7 +15,7 @@ var statusText = map[int]string{
 
 type Response struct {
 	StatusCode int
-	Headers    map[string]string
+	Headers    Headers
 	Body       []byte
 }
 
@@ -30,19 +30,19 @@ func (response Response) Bytes() ([]byte, error) {
 	}
 
 	if response.Headers == nil {
-		response.Headers = make(map[string]string)
+		response.Headers = make(Headers)
 	}
 
-	if _, ok := response.Headers["Content-Type"]; !ok {
-		response.Headers["Content-Type"] = "text/plain"
+	if _, ok := response.Headers.Get("Content-Type"); !ok {
+		response.Headers.Set("Content-Type", "text/plain")
 	}
 
-	if _, ok := response.Headers["Content-Length"]; !ok {
-		response.Headers["Content-Length"] = strconv.Itoa(len(response.Body))
+	if _, ok := response.Headers.Get("Content-Length"); !ok {
+		response.Headers.Set("Content-Length", strconv.Itoa(len(response.Body)))
 	}
 
-	if _, ok := response.Headers["Connection"]; !ok {
-		response.Headers["Connection"] = "close"
+	if _, ok := response.Headers.Get("Connection"); !ok {
+		response.Headers.Set("Connection", "close")
 	}
 
 	var res bytes.Buffer

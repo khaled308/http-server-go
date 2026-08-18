@@ -9,11 +9,13 @@ import (
 )
 
 type Request struct {
-	Method  string
-	Path    string
-	Version string
-	Headers Headers
-	Body    []byte
+	Method      string
+	Path        string
+	Version     string
+	Headers     Headers
+	Body        []byte
+	QueryParams map[string]string
+	PathParams  map[string]string
 }
 
 var methods = map[string]bool{
@@ -126,11 +128,43 @@ func readRequest(conn net.Conn) (Request, error) {
 		request, err := parseRequest(rawRequest)
 
 		if err == nil {
+			request.ParseQueryParams()
+			request.ParsePathParams(router)
 			return request, nil
 		}
 
 		if len(request.Body) == 0 {
 			return request, err
 		}
+	}
+}
+
+func (request *Request) ParseQueryParams() {
+	if request.QueryParams == nil {
+		request.QueryParams = make(map[string]string)
+	}
+
+	path := request.Path
+
+	idx := strings.IndexRune(path, '?')
+
+	if idx != -1 {
+		queryStr := strings.Split(path[idx+1:], "&")
+
+		for _, param := range queryStr {
+			p := strings.Split(param, "=")
+			key := p[0]
+			value := p[1]
+
+			request.QueryParams[key] = value
+		}
+	}
+}
+
+func (request *Request) ParsePathParams(router *Router) {
+	request.PathParams, _ = router.extractPathParams(request.Method, request.Path)
+
+	if request.PathParams == nil {
+		request.PathParams = make(map[string]string)
 	}
 }

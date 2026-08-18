@@ -7,6 +7,7 @@ import (
 )
 
 func startServer() {
+	setupRoutes()
 	listener, err := net.Listen("tcp", "localhost:8080")
 	if err != nil {
 		fmt.Println(err)
@@ -31,18 +32,31 @@ func startServer() {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	_, err := readRequest(conn)
+	request, err := readRequest(conn)
 	if err != nil {
 		fmt.Println("Read error:", err)
+		response := Response{
+			StatusCode: 400,
+			Body:       []byte(err.Error()),
+		}
+
+		data, _ := response.Bytes()
+
+		conn.Write(data)
 		return
 	}
 
-	response := Response{
-		StatusCode: 200,
-		Body:       []byte("Hello, World!"),
+	if handler, ok := router.Match(request.Method, request.Path); ok {
+		data, _ := handler(request).Bytes()
+		conn.Write(data)
+	} else {
+		response := Response{
+			StatusCode: 404,
+			Body:       []byte("Not Found"),
+		}
+
+		data, _ := response.Bytes()
+
+		conn.Write(data)
 	}
-
-	data, _ := response.Bytes()
-
-	conn.Write(data)
 }
